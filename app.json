@@ -2,7 +2,7 @@
   "expo": {
     "name": "RugBuster",
     "slug": "rugbuster-mobile",
-    "version": "1.2.0",
+    "version": "1.3.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "dark",
@@ -18,7 +18,7 @@
       },
       "predictiveBackGestureEnabled": false,
       "package": "io.rugbuster.mobile",
-      "versionCode": 3,
+      "versionCode": 4,
       "intentFilters": [
         {
           "action": "VIEW",
@@ -35,6 +35,11 @@
             "DEFAULT"
           ]
         }
+      ],
+      "blockedPermissions": [
+        "android.permission.SYSTEM_ALERT_WINDOW",
+        "android.permission.READ_EXTERNAL_STORAGE",
+        "android.permission.WRITE_EXTERNAL_STORAGE"
       ]
     },
     "web": {
@@ -50,7 +55,8 @@
         }
       ],
       "expo-font",
-      "./plugins/withReleaseSigning"
+      "./plugins/withReleaseSigning",
+      "expo-background-task"
     ],
     "scheme": "rugbuster",
     "backgroundColor": "#06050c",

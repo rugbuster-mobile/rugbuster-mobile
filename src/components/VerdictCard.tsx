@@ -6,9 +6,9 @@ import { C, F, verdictOf } from "../theme";
 const TONE: Record<Tone, string> = { danger: C.danger, warn: C.warn, good: C.green, muted: "#3a3550" };
 const open = (url: string) => Linking.openURL(url).catch(() => {});
 
-type Props = { result: any; receipt: string | null; onPay: () => void; busy: boolean };
+type Props = { result: any; receipt: string | null; onPay: () => void; busy: boolean; watched: boolean; onWatch: () => void };
 
-export function VerdictCard({ result, receipt, onPay, busy }: Props) {
+export function VerdictCard({ result, receipt, onPay, busy, watched, onWatch }: Props) {
   const v = verdictOf(result.label);
   const name = [result.token_name, result.token_symbol && result.token_symbol !== result.token_name ? `(${result.token_symbol})` : ""]
     .filter(Boolean)
@@ -27,6 +27,10 @@ export function VerdictCard({ result, receipt, onPay, busy }: Props) {
           <Text style={s.mint}>{short(result.address)}</Text>
         </View>
       </View>
+
+      <Pressable onPress={onWatch} style={[s.watch, watched && s.watchOn]}>
+        <Text style={[s.watchText, watched && { color: C.bg }]}>{watched ? "★ WATCHING · ALERTS ON" : "☆ WATCH · ALERT ME IF THE CREATOR SELLS"}</Text>
+      </Pressable>
 
       {!!result.verdict_summary && <Text style={s.summary}>{result.verdict_summary}</Text>}
 
@@ -86,6 +90,9 @@ const s = StyleSheet.create({
   label: { fontFamily: F.display, fontSize: 24, letterSpacing: 1 },
   name: { fontFamily: F.bodyBold, color: C.text, fontSize: 17, marginTop: 2 },
   mint: { fontFamily: F.mono, color: C.muted, fontSize: 11, marginTop: 2 },
+  watch: { marginTop: 14, borderWidth: 1, borderColor: C.green, borderRadius: 10, paddingVertical: 10, alignItems: "center" },
+  watchOn: { backgroundColor: C.green },
+  watchText: { fontFamily: F.monoBold, color: C.green, fontSize: 11, letterSpacing: 1.2 },
   summary: { fontFamily: F.body, color: C.text, fontSize: 17, lineHeight: 23, marginTop: 16 },
   fact: { borderLeftWidth: 3, paddingLeft: 12, marginTop: 14 },
   factHead: { fontFamily: F.monoBold, color: C.soft, fontSize: 11, letterSpacing: 2 },

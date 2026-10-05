@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { BackHandler, Pressable, StyleSheet, Text, View } from "react-native";
+import { AppState, BackHandler, Pressable, StyleSheet, Text, View } from "react-native";
 import { StatusBar } from "expo-status-bar";
 import * as Clipboard from "expo-clipboard";
 import * as Haptics from "expo-haptics";
@@ -9,6 +9,7 @@ import { Rajdhani_500Medium, Rajdhani_700Bold } from "@expo-google-fonts/rajdhan
 import { JetBrainsMono_400Regular, JetBrainsMono_700Bold } from "@expo-google-fonts/jetbrains-mono";
 import { Ionicons } from "@expo/vector-icons";
 import { useShareIntent } from "expo-share-intent";
+import * as Notifications from "expo-notifications";
 import { freeScan, tokenImage } from "./src/api";
 import { SphereHandle } from "./src/components/Sphere";
 import { Entry, loadHistory, remember } from "./src/history";
@@ -20,11 +21,12 @@ import { LiveScreen } from "./src/screens/LiveScreen";
 import { ScanScreen } from "./src/screens/ScanScreen";
 import { StudyScreen } from "./src/screens/StudyScreen";
 import { C, F, verdictOf } from "./src/theme";
+import { checkWatchlist, clearAlert, loadWatchlist, toggleWatch, Watched } from "./src/watch";
 
 type Tab = "live" | "history" | "scan" | "study" | "about";
 const SIDE_TABS: { key: Tab; label: string; icon: keyof typeof Ionicons.glyphMap }[] = [
   { key: "live", label: "Live", icon: "pulse" },
-  { key: "history", label: "History", icon: "time-outline" },
+  { key: "history", label: "Watch", icon: "notifications-outline" },
   { key: "study", label: "Study", icon: "stats-chart" },
   { key: "about", label: "About", icon: "shield-checkmark-outline" },
 ];
@@ -44,9 +46,29 @@ export default function App() {
   const [receipt, setReceipt] = useState<string | null>(null);
   const [history, setHistory] = useState<Entry[]>([]);
 
+  const [watchlist, setWatchlist] = useState<Watched[]>([]);
+  const [checking, setChecking] = useState(false);
+
   useEffect(() => {
     loadHistory().then(setHistory);
+    loadWatchlist().then(setWatchlist);
   }, []);
+
+  // Re-check the watchlist whenever the app comes to the front. Changes show
+  // up in the app; the background task is what sends notifications.
+  const recheck = useCallback(async () => {
+    setChecking(true);
+    try {
+      setWatchlist(await checkWatchlist(false));
+    } finally {
+      setChecking(false);
+    }
+  }, []);
+  useEffect(() => {
+    recheck();
+    const sub = AppState.addEventListener("change", (st) => st === "active" && recheck());
+    return () => sub.remove();
+  }, [recheck]);
 
   // Android back goes to the scan tab before it leaves the app.
   useEffect(() => {
@@ -105,6 +127,27 @@ export default function App() {
     if (text) scan(text);
   }, [hasShareIntent, shareIntent, resetShareIntent, scan]);
 
+  // Tapping a watchlist notification opens that token.
+  useEffect(() => {
+    const sub = Notifications.addNotificationResponseReceivedListener((r) => {
+      const mint = (r.notification.request.content.data as any)?.mint;
+      if (mint) scan(String(mint));
+    });
+    return () => sub.remove();
+  }, [scan]);
+
+  const watch = async () => {
+    if (!result?.address) return;
+    Haptics.selectionAsync().catch(() => {});
+    setWatchlist(await toggleWatch(result));
+  };
+
+  const openFromWatch = async (mint: string) => {
+    await clearAlert(mint);
+    setWatchlist(await loadWatchlist());
+    scan(mint);
+  };
+
   const paste = async () => {
     const text = await Clipboard.getStringAsync();
     if (text) {
@@ -151,15 +194,19 @@ export default function App() {
           onScan={scan}
           onPaste={paste}
           onPay={pay}
+          watched={!!result && watchlist.some((w) => w.mint === result.address)}
+          onWatch={watch}
+          alerts={watchlist.filter((w) => !!w.alert).length}
+          onAlerts={() => setTab("history")}
         />
       </View>
       {tab === "live" && <View style={s.page}><LiveScreen onOpen={scan} active={tab === "live"} /></View>}
-      {tab === "history" && <View style={s.page}><HistoryScreen history={history} onOpen={scan} /></View>}
+      {tab === "history" && <View style={s.page}><HistoryScreen history={history} watchlist={watchlist} checking={checking} onRefresh={recheck} onOpen={openFromWatch} /></View>}
       {tab === "study" && <View style={s.page}><StudyScreen onOpen={scan} /></View>}
       {tab === "about" && <View style={s.page}><AboutScreen /></View>}
 
       <View style={s.bar}>
-        {SIDE_TABS.slice(0, 2).map((t) => <TabButton key={t.key} t={t} active={tab === t.key} onPress={() => setTab(t.key)} />)}
+        {SIDE_TABS.slice(0, 2).map((t) => <TabButton key={t.key} t={t} active={tab === t.key} dot={t.key === "history" && watchlist.some((w) => !!w.alert)} onPress={() => setTab(t.key)} />)}
         <View style={s.centerSlot}>
           <Pressable
             style={({ pressed }) => [s.center, tab === "scan" && s.centerOn, pressed && { transform: [{ scale: 0.94 }] }]}
@@ -179,10 +226,13 @@ export default function App() {
   );
 }
 
-function TabButton({ t, active, onPress }: { t: (typeof SIDE_TABS)[number]; active: boolean; onPress: () => void }) {
+function TabButton({ t, active, onPress, dot }: { t: (typeof SIDE_TABS)[number]; active: boolean; onPress: () => void; dot?: boolean }) {
   return (
     <Pressable style={s.tab} onPress={onPress} hitSlop={6}>
-      <Ionicons name={t.icon} size={22} color={active ? C.green : C.muted} />
+      <View>
+        <Ionicons name={t.icon} size={22} color={active ? C.green : C.muted} />
+        {dot && <View style={s.dot} />}
+      </View>
       <Text style={[s.tabLabel, active && { color: C.green }]}>{t.label}</Text>
     </Pressable>
   );
@@ -200,6 +250,7 @@ const s = StyleSheet.create({
     flexDirection: "row", alignItems: "flex-end", paddingBottom: 10,
   },
   tab: { flex: 1, alignItems: "center", gap: 4 },
+  dot: { position: "absolute", top: -2, right: -4, width: 9, height: 9, borderRadius: 5, backgroundColor: C.danger },
   tabLabel: { fontFamily: F.bodyBold, color: C.muted, fontSize: 12 },
   centerSlot: { flex: 1.2, alignItems: "center", gap: 4 },
   center: {

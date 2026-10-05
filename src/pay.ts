@@ -117,6 +117,7 @@ export async function payAndScan(mint: string, onStep: (s: string) => void): Pro
         why = facilitatorReason((await paid.json()).error || why);
       } catch {}
     }
+    if (/self_send/i.test(why)) throw new Error("This wallet is the one RugBuster gets paid to. Pay from a different wallet; nothing was charged.");
     throw new Error(`Payment not accepted, nothing was charged. Reason: ${why}`);
   }
   const data = await paid.json();

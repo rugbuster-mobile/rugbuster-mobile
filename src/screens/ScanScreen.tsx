@@ -22,9 +22,13 @@ type Props = {
   onScan: (text: string) => void;
   onPaste: () => void;
   onPay: () => void;
+  watched: boolean;
+  onWatch: () => void;
+  alerts: number;
+  onAlerts: () => void;
 };
 
-export function ScanScreen({ sphere, input, setInput, busy, error, result, receipt, onScan, onPaste, onPay }: Props) {
+export function ScanScreen({ sphere, input, setInput, busy, error, result, receipt, onScan, onPaste, onPay, watched, onWatch, alerts, onAlerts }: Props) {
   return (
     <ScrollView contentContainerStyle={s.scroll} keyboardShouldPersistTaps="handled">
       <View style={s.top}>
@@ -36,6 +40,12 @@ export function ScanScreen({ sphere, input, setInput, busy, error, result, recei
           <Text style={s.netText}>SOLANA</Text>
         </View>
       </View>
+
+      {alerts > 0 && (
+        <Pressable style={s.alertBanner} onPress={onAlerts}>
+          <Text style={s.alertBannerText}>⚠ {alerts} ALERT{alerts > 1 ? "S" : ""} ON YOUR WATCHLIST · VIEW</Text>
+        </Pressable>
+      )}
 
       <View>
         <Sphere ref={sphere} height={300} />
@@ -88,7 +98,7 @@ export function ScanScreen({ sphere, input, setInput, busy, error, result, recei
           )}
         </View>
       )}
-      {result && !busy && <VerdictCard result={result} receipt={receipt} onPay={onPay} busy={!!busy} />}
+      {result && !busy && <VerdictCard result={result} receipt={receipt} onPay={onPay} busy={!!busy} watched={watched} onWatch={onWatch} />}
     </ScrollView>
   );
 }
@@ -100,6 +110,8 @@ const s = StyleSheet.create({
   net: { flexDirection: "row", alignItems: "center", gap: 6, borderWidth: 1, borderColor: C.line, borderRadius: 20, paddingHorizontal: 10, paddingVertical: 4 },
   dot: { width: 7, height: 7, borderRadius: 4, backgroundColor: C.green },
   netText: { fontFamily: F.monoBold, color: C.green, fontSize: 10, letterSpacing: 2 },
+  alertBanner: { marginTop: 14, borderWidth: 1, borderColor: C.danger, backgroundColor: "#1c0a12", borderRadius: 10, paddingVertical: 10, alignItems: "center" },
+  alertBannerText: { fontFamily: F.monoBold, color: C.danger, fontSize: 11, letterSpacing: 1.5 },
   status: { position: "absolute", bottom: 6, alignSelf: "center", fontFamily: F.mono, color: C.muted, fontSize: 11, letterSpacing: 3 },
   headline: { fontFamily: F.bodyBold, color: C.text, fontSize: 26, lineHeight: 30, textAlign: "center", marginTop: 6, marginBottom: 18 },
   inputBox: { flexDirection: "row", alignItems: "center", backgroundColor: C.panel, borderColor: C.line, borderWidth: 1, borderRadius: 14 },
