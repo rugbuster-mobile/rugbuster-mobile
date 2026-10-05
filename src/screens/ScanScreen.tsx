@@ -78,7 +78,16 @@ export function ScanScreen({ sphere, input, setInput, busy, error, result, recei
       </View>
       <Text style={s.hint}>Tip: in Phantom, DexScreener or Solscan tap Share → RugBuster.</Text>
 
-      {error && <Text style={s.error}>{error}</Text>}
+      {error && (
+        <View style={s.errBox}>
+          <Text style={s.error}>{error}</Text>
+          {!!input.trim() && !busy && (
+            <Pressable onPress={() => onScan(input)} style={s.retry}>
+              <Text style={s.retryText}>TRY AGAIN</Text>
+            </Pressable>
+          )}
+        </View>
+      )}
       {result && !busy && <VerdictCard result={result} receipt={receipt} onPay={onPay} busy={!!busy} />}
     </ScrollView>
   );
@@ -102,5 +111,8 @@ const s = StyleSheet.create({
   chip: { borderWidth: 1, borderColor: C.line, borderRadius: 8, paddingHorizontal: 10, paddingVertical: 7 },
   chipText: { fontFamily: F.monoBold, color: C.soft, fontSize: 10, letterSpacing: 1.5 },
   hint: { fontFamily: F.body, color: C.muted, fontSize: 14, textAlign: "center", marginTop: 12 },
-  error: { fontFamily: F.body, color: C.danger, fontSize: 15, marginTop: 16, textAlign: "center" },
+  errBox: { marginTop: 16, alignItems: "center", gap: 10 },
+  error: { fontFamily: F.body, color: C.danger, fontSize: 15, textAlign: "center" },
+  retry: { borderWidth: 1, borderColor: C.danger, borderRadius: 10, paddingHorizontal: 18, paddingVertical: 8 },
+  retryText: { fontFamily: F.monoBold, color: C.danger, fontSize: 12, letterSpacing: 2 },
 });

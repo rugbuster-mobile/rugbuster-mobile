@@ -14,6 +14,7 @@ import {
 } from "@solana/web3.js";
 import { transact, Web3MobileWallet } from "@solana-mobile/mobile-wallet-adapter-protocol-web3js";
 import { API } from "./api";
+import { netFetch } from "./net";
 
 const TOKEN = new PublicKey("TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA");
 const ATA = new PublicKey("ATokenGPvbdGVxr1b2hvZbsiqW5xWH25efTNsLJA8knL");
@@ -73,7 +74,7 @@ export type PaidResult = { data: any; receiptTx: string | null; charged: boolean
 export async function payAndScan(mint: string, onStep: (s: string) => void): Promise<PaidResult> {
   const url = `${API}/x402/score?address=${mint}`;
   onStep("Asking for the price…");
-  const first = await fetch(url);
+  const first = await netFetch(url);
   if (first.status !== 402) throw new Error(`Expected a 402 price quote, got ${first.status}.`);
   const challenge = decodeJson(first.headers.get("PAYMENT-REQUIRED") || "");
   const req = (challenge.accepts || []).find((a: any) => String(a.network).startsWith("solana:"));
@@ -104,7 +105,7 @@ export async function payAndScan(mint: string, onStep: (s: string) => void): Pro
     accepted: req,
     resource: challenge.resource,
   });
-  const paid = await fetch(url, { headers: { "PAYMENT-SIGNATURE": header } });
+  const paid = await netFetch(url, { headers: { "PAYMENT-SIGNATURE": header } });
   const receiptHeader = paid.headers.get("PAYMENT-RESPONSE");
   const receipt = receiptHeader ? decodeJson(receiptHeader) : null;
   if (paid.status === 402) {

@@ -1,6 +1,8 @@
 // Turns whatever the user shared, pasted or copied into one Solana mint address.
 // Same rules as the Chrome extension, so both read a link the same way.
 
+import { netFetch } from "./net";
+
 // Solana addresses are base58: no 0, O, I or l, 32 to 44 characters.
 const BASE58_RUN = /[1-9A-HJ-NP-Za-km-z]{32,44}/g;
 
@@ -40,7 +42,7 @@ export async function resolveMint(text: string | null | undefined): Promise<stri
   const pair = String(text || "").match(DEXSCREENER_PAIR);
   if (!pair) return extractMint(text);
   try {
-    const response = await fetch("https://api.dexscreener.com/latest/dex/pairs/solana/" + pair[1]);
+    const response = await netFetch("https://api.dexscreener.com/latest/dex/pairs/solana/" + pair[1]);
     const data = await response.json();
     const found = (data.pairs && data.pairs[0]) || data.pair;
     if (!found) return null;
