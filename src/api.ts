@@ -7,3 +7,21 @@ export async function freeScan(mint: string): Promise<any> {
   if (data.ok === false) throw new Error(data.error || "The API did not return a verdict.");
   return data;
 }
+
+export type FeedItem = {
+  address: string;
+  label: string;
+  risk_score: number | null;
+  name: string | null;
+  symbol: string | null;
+  scanned_at: string;
+  reason: string | null;
+};
+
+export async function loadFeed(): Promise<FeedItem[]> {
+  const res = await fetch(`${API}/feed`);
+  const data = await res.json();
+  return data?.items || [];
+}
+
+export const tokenImage = (mint: string) => `${API}/token-image?address=${mint}`;
