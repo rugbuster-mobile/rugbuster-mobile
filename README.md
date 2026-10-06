@@ -17,7 +17,7 @@ Everything a scan says comes from the public RugBuster API, which reads the chai
 
 ## Download
 
-Install the APK from the [latest release](https://github.com/rugbuster-mobile/rugbuster-mobile/releases/latest) on any Android phone (allow installs from your browser or file manager when asked).
+Install the APK from the [latest release](https://github.com/rugbuster-mobile/rugbuster-mobile/releases/latest) ([direct download](https://github.com/rugbuster-mobile/rugbuster-mobile/releases/latest/download/RugBuster.apk)) on any Android phone (allow installs from your browser or file manager when asked).
 
 ## Build it yourself
 
@@ -55,3 +55,7 @@ API used: `https://rugbuster-solana-api-production.up.railway.app` (`/score`, `/
 - X: https://x.com/RugBusterAI
 
 Built by Fedja Furduj (Belgrade). Read from chain. Not financial advice.
+
+## Pitch deck
+
+[RugBuster-CLOCK-IN-deck.pdf](docs/RugBuster-CLOCK-IN-deck.pdf)
