@@ -26,7 +26,7 @@ import { checkWatchlist, clearAlert, loadWatchlist, toggleWatch, Watched } from 
 type Tab = "live" | "history" | "scan" | "study" | "about";
 const SIDE_TABS: { key: Tab; label: string; icon: keyof typeof Ionicons.glyphMap }[] = [
   { key: "live", label: "Live", icon: "pulse" },
-  { key: "history", label: "Watch", icon: "notifications-outline" },
+  { key: "history", label: "Track", icon: "notifications-outline" },
   { key: "study", label: "Study", icon: "stats-chart" },
   { key: "about", label: "About", icon: "shield-checkmark-outline" },
 ];
@@ -110,10 +110,12 @@ export default function App() {
       setResult(data);
       showVerdict(data);
       setHistory(await remember(data));
+      return data;
     } catch (e: any) {
       sphere.current?.scan(false);
       sphere.current?.verdict(null);
       setError(String(e?.message || e));
+      return null;
     } finally {
       setBusy(null);
     }
@@ -136,10 +138,12 @@ export default function App() {
     return () => sub.remove();
   }, [scan]);
 
+  // TRACK next to SCAN: track the token on screen, or scan what is typed first.
   const watch = async () => {
-    if (!result?.address) return;
     Haptics.selectionAsync().catch(() => {});
-    setWatchlist(await toggleWatch(result));
+    let data = result;
+    if (!data?.address || (input.trim() && input.trim() !== data.address)) data = await scan(input);
+    if (data?.address) setWatchlist(await toggleWatch(data));
   };
 
   const openFromWatch = async (mint: string) => {

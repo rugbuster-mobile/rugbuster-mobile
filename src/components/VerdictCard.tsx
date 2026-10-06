@@ -28,10 +28,6 @@ export function VerdictCard({ result, receipt, onPay, busy, watched, onWatch }: 
         </View>
       </View>
 
-      <Pressable onPress={onWatch} style={[s.watch, watched && s.watchOn]}>
-        <Text style={[s.watchText, watched && { color: C.bg }]}>{watched ? "★ WATCHING · ALERTS ON" : "☆ WATCH · ALERT ME IF THE CREATOR SELLS"}</Text>
-      </Pressable>
-
       {!!result.verdict_summary && <Text style={s.summary}>{result.verdict_summary}</Text>}
 
       {facts(result).map((f, i) => (

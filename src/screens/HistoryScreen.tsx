@@ -19,10 +19,10 @@ export function HistoryScreen({ history, watchlist, checking, onRefresh, onOpen 
       contentContainerStyle={s.scroll}
       refreshControl={<RefreshControl refreshing={checking} onRefresh={onRefresh} tintColor={C.green} colors={[C.green]} />}
     >
-      <Text style={s.kicker}>WATCHLIST · ALERTS</Text>
+      <Text style={s.kicker}>TRACKED · ALERTS</Text>
       <Text style={s.title}>Tokens you follow</Text>
       <Text style={s.sub}>
-        RugBuster re-checks these in the background and notifies you when a creator sells or a verdict gets worse. Tap ☆ WATCH on any result to add it.
+        RugBuster re-checks these in the background and notifies you when a creator sells or a verdict gets worse. To add one, scan it and tap TRACK next to the scan button.
       </Text>
 
       <Text style={s.test} onPress={() => testAlert()}>SEND A TEST ALERT (ARRIVES IN 5 S) →</Text>
@@ -30,7 +30,7 @@ export function HistoryScreen({ history, watchlist, checking, onRefresh, onOpen 
       {watchlist.length === 0 ? (
         <View style={s.emptyBox}>
           <Ionicons name="notifications-outline" size={26} color={C.muted} />
-          <Text style={s.empty}>Nothing on your watchlist yet.</Text>
+          <Text style={s.empty}>Nothing tracked yet.</Text>
         </View>
       ) : (
         watchlist.map((w) => {

@@ -43,7 +43,7 @@ export function ScanScreen({ sphere, input, setInput, busy, error, result, recei
 
       {alerts > 0 && (
         <Pressable style={s.alertBanner} onPress={onAlerts}>
-          <Text style={s.alertBannerText}>⚠ {alerts} ALERT{alerts > 1 ? "S" : ""} ON YOUR WATCHLIST · VIEW</Text>
+          <Text style={s.alertBannerText}>⚠ {alerts} ALERT{alerts > 1 ? "S" : ""} ON YOUR TRACKED TOKENS · VIEW</Text>
         </Pressable>
       )}
 
@@ -71,13 +71,24 @@ export function ScanScreen({ sphere, input, setInput, busy, error, result, recei
         </Pressable>
       </View>
 
-      <Pressable
-        style={({ pressed }) => [s.scanBtn, (pressed || !!busy) && { opacity: 0.75 }]}
-        onPress={() => onScan(input)}
-        disabled={!!busy || !input.trim()}
-      >
-        {busy ? <ActivityIndicator color={C.bg} /> : <Text style={s.scanText}>SCAN · FREE</Text>}
-      </Pressable>
+      <View style={s.actions}>
+        <Pressable
+          style={({ pressed }) => [s.scanBtn, (pressed || !!busy) && { opacity: 0.75 }]}
+          onPress={() => onScan(input)}
+          disabled={!!busy || !input.trim()}
+        >
+          {busy ? <ActivityIndicator color={C.bg} /> : <Text style={s.scanText}>SCAN · FREE</Text>}
+        </Pressable>
+        <Pressable
+          style={({ pressed }) => [s.trackBtn, watched && s.trackOn, (pressed || !!busy || !input.trim()) && { opacity: 0.6 }]}
+          onPress={onWatch}
+          disabled={!!busy || !input.trim()}
+        >
+          <Ionicons name={watched ? "notifications" : "notifications-outline"} size={18} color={watched ? C.bg : C.green} />
+          <Text style={[s.trackText, watched && { color: C.bg }]}>{watched ? "TRACKING" : "TRACK"}</Text>
+        </Pressable>
+      </View>
+      {result && !busy && !watched && <Text style={s.trackHint}>Track = alert me when the creator sells or the verdict gets worse.</Text>}
 
       <View style={s.chips}>
         {EXAMPLES.map((e) => (
@@ -117,7 +128,12 @@ const s = StyleSheet.create({
   inputBox: { flexDirection: "row", alignItems: "center", backgroundColor: C.panel, borderColor: C.line, borderWidth: 1, borderRadius: 14 },
   input: { flex: 1, color: C.text, paddingHorizontal: 16, paddingVertical: 14, fontSize: 14, fontFamily: F.mono },
   pasteBtn: { paddingHorizontal: 14 },
-  scanBtn: { marginTop: 12, backgroundColor: C.green, borderRadius: 14, paddingVertical: 15, alignItems: "center" },
+  actions: { flexDirection: "row", gap: 10, marginTop: 12 },
+  scanBtn: { flex: 2, backgroundColor: C.green, borderRadius: 14, paddingVertical: 15, alignItems: "center", justifyContent: "center" },
+  trackBtn: { flex: 1, flexDirection: "row", gap: 6, borderWidth: 1.5, borderColor: C.green, borderRadius: 14, alignItems: "center", justifyContent: "center" },
+  trackOn: { backgroundColor: C.green },
+  trackText: { fontFamily: F.display, color: C.green, fontSize: 12, letterSpacing: 1.5 },
+  trackHint: { fontFamily: F.body, color: C.muted, fontSize: 13, textAlign: "center", marginTop: 8 },
   scanText: { fontFamily: F.display, color: C.bg, fontSize: 15, letterSpacing: 3 },
   chips: { flexDirection: "row", flexWrap: "wrap", gap: 8, marginTop: 14, justifyContent: "center" },
   chip: { borderWidth: 1, borderColor: C.line, borderRadius: 8, paddingHorizontal: 10, paddingVertical: 7 },
