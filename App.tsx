@@ -104,10 +104,10 @@ export default function App() {
     try {
       const mint = await resolveMint(text);
       if (!mint) throw new Error("No Solana token address in that. Paste the mint, or a Solscan, pump.fun or DexScreener link.");
-      setInput(mint);
       setBusy("Reading the chain…");
       const data = await freeScan(mint);
       setResult(data);
+      setInput(""); // the card shows the token; the box is ready for the next one
       showVerdict(data);
       setHistory(await remember(data));
       return data;
@@ -150,6 +150,16 @@ export default function App() {
     await clearAlert(mint);
     setWatchlist(await loadWatchlist());
     scan(mint);
+  };
+
+  const clear = () => {
+    setInput("");
+    setResult(null);
+    setError(null);
+    setReceipt(null);
+    sphere.current?.scan(false);
+    sphere.current?.verdict(null);
+    sphere.current?.image(null);
   };
 
   const paste = async () => {
@@ -202,6 +212,7 @@ export default function App() {
           onWatch={watch}
           alerts={watchlist.filter((w) => !!w.alert).length}
           onAlerts={() => setTab("history")}
+          onClear={clear}
         />
       </View>
       {tab === "live" && <View style={s.page}><LiveScreen onOpen={scan} active={tab === "live"} /></View>}

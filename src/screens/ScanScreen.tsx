@@ -26,9 +26,10 @@ type Props = {
   onWatch: () => void;
   alerts: number;
   onAlerts: () => void;
+  onClear: () => void;
 };
 
-export function ScanScreen({ sphere, input, setInput, busy, error, result, receipt, onScan, onPaste, onPay, watched, onWatch, alerts, onAlerts }: Props) {
+export function ScanScreen({ sphere, input, setInput, busy, error, result, receipt, onScan, onPaste, onPay, watched, onWatch, alerts, onAlerts, onClear }: Props) {
   return (
     <ScrollView contentContainerStyle={s.scroll} keyboardShouldPersistTaps="handled">
       <View style={s.top}>
@@ -58,7 +59,7 @@ export function ScanScreen({ sphere, input, setInput, busy, error, result, recei
         <TextInput
           style={s.input}
           value={input}
-          onChangeText={setInput}
+          onChangeText={(t) => { if (result && t && !input) onClear(); setInput(t); }}
           placeholder="Mint address or link"
           placeholderTextColor={C.muted}
           autoCapitalize="none"
@@ -66,6 +67,11 @@ export function ScanScreen({ sphere, input, setInput, busy, error, result, recei
           onSubmitEditing={() => onScan(input)}
           returnKeyType="search"
         />
+        {(!!input || !!result || !!error) && !busy ? (
+          <Pressable onPress={onClear} hitSlop={10} style={s.pasteBtn}>
+            <Ionicons name="close-circle" size={22} color={C.muted} />
+          </Pressable>
+        ) : null}
         <Pressable onPress={onPaste} hitSlop={10} style={s.pasteBtn}>
           <Ionicons name="clipboard-outline" size={20} color={C.cyan} />
         </Pressable>
@@ -80,9 +86,9 @@ export function ScanScreen({ sphere, input, setInput, busy, error, result, recei
           {busy ? <ActivityIndicator color={C.bg} /> : <Text style={s.scanText}>SCAN · FREE</Text>}
         </Pressable>
         <Pressable
-          style={({ pressed }) => [s.trackBtn, watched && s.trackOn, (pressed || !!busy || !input.trim()) && { opacity: 0.6 }]}
+          style={({ pressed }) => [s.trackBtn, watched && s.trackOn, (pressed || !!busy || (!input.trim() && !result)) && { opacity: 0.6 }]}
           onPress={onWatch}
-          disabled={!!busy || !input.trim()}
+          disabled={!!busy || (!input.trim() && !result)}
         >
           <Ionicons name={watched ? "notifications" : "notifications-outline"} size={18} color={watched ? C.bg : C.green} />
           <Text style={[s.trackText, watched && { color: C.bg }]}>{watched ? "TRACKING" : "TRACK"}</Text>
