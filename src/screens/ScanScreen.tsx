@@ -4,6 +4,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { Sphere, SphereHandle } from "../components/Sphere";
 import { VerdictCard } from "../components/VerdictCard";
 import { C, F } from "../theme";
+import { reportOnTelegram } from "../support";
 
 const EXAMPLES = [
   { label: "CREATOR DUMP", mint: "CqNJeUKi2feUBCbG2rARBQxh9BwUynoK5WrH6d8Bpump" },
@@ -113,6 +114,9 @@ export function ScanScreen({ sphere, input, setInput, busy, error, result, recei
               <Text style={s.retryText}>TRY AGAIN</Text>
             </Pressable>
           )}
+          <Text style={s.report} onPress={() => reportOnTelegram({ mint: result?.address || input.trim() || null, error })}>
+            STILL BROKEN? REPORT IT →
+          </Text>
         </View>
       )}
       {result && !busy && <VerdictCard result={result} receipt={receipt} onPay={onPay} busy={!!busy} watched={watched} onWatch={onWatch} />}
@@ -145,6 +149,7 @@ const s = StyleSheet.create({
   chip: { borderWidth: 1, borderColor: C.line, borderRadius: 8, paddingHorizontal: 10, paddingVertical: 7 },
   chipText: { fontFamily: F.monoBold, color: C.soft, fontSize: 10, letterSpacing: 1.5 },
   hint: { fontFamily: F.body, color: C.muted, fontSize: 14, textAlign: "center", marginTop: 12 },
+  report: { fontFamily: F.monoBold, color: C.muted, fontSize: 11, letterSpacing: 1.5, marginTop: 2 },
   errBox: { marginTop: 16, alignItems: "center", gap: 10 },
   error: { fontFamily: F.body, color: C.danger, fontSize: 15, textAlign: "center" },
   retry: { borderWidth: 1, borderColor: C.danger, borderRadius: 10, paddingHorizontal: 18, paddingVertical: 8 },

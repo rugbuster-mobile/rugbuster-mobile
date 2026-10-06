@@ -1,5 +1,6 @@
-import { Linking, ScrollView, StyleSheet, Text, View } from "react-native";
+import { Linking, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { C, F } from "../theme";
+import { reportOnDiscord, reportOnTelegram } from "../support";
 
 const open = (url: string) => Linking.openURL(url).catch(() => {});
 
@@ -35,6 +36,17 @@ export function AboutScreen() {
         </View>
       ))}
 
+      <Text style={s.kicker2}>SOMETHING NOT WORKING?</Text>
+      <Text style={s.body}>Tell us. A scan that looks wrong, an alert that did not arrive, a payment that failed: write, and we fix it.</Text>
+      <View style={s.supportRow}>
+        <Pressable style={s.supportBtn} onPress={() => reportOnTelegram()}>
+          <Text style={s.supportText}>REPORT ON TELEGRAM</Text>
+        </Pressable>
+        <Pressable style={[s.supportBtn, { borderColor: C.purple }]} onPress={reportOnDiscord}>
+          <Text style={[s.supportText, { color: C.purple }]}>DISCORD</Text>
+        </Pressable>
+      </View>
+
       <Text style={s.kicker2}>HONEST BY DESIGN</Text>
       <Text style={s.body}>RugBuster does not take money from token creators: no badges, no paid verification. Scans are free; agents and anyone who wants to can pay $0.01 per scan over x402 on Solana. Tracking is free for 3 tokens; wallets holding SKR or a Seeker Genesis Token track without limit. Your scan history stays on this phone.</Text>
 
@@ -61,6 +73,9 @@ const s = StyleSheet.create({
   rowHead: { fontFamily: F.bodyBold, color: C.text, fontSize: 18 },
   rowBody: { fontFamily: F.body, color: C.soft, fontSize: 16, lineHeight: 22, marginTop: 2 },
   body: { fontFamily: F.body, color: C.soft, fontSize: 17, lineHeight: 24, marginTop: 10 },
+  supportRow: { flexDirection: "row", gap: 10, marginTop: 12 },
+  supportBtn: { borderWidth: 1.5, borderColor: C.green, borderRadius: 10, paddingHorizontal: 14, paddingVertical: 10 },
+  supportText: { fontFamily: F.monoBold, color: C.green, fontSize: 11, letterSpacing: 1.5 },
   link: { fontFamily: F.monoBold, color: C.cyan, fontSize: 12, letterSpacing: 1.5, paddingVertical: 9 },
   foot: { fontFamily: F.body, color: C.muted, fontSize: 13, marginTop: 24 },
 });
