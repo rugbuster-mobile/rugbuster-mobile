@@ -16,7 +16,7 @@ const LINKS: [string, string][] = [
   ["rugbuster.io", "https://rugbuster.io"],
   ["X · @RugBusterAI", "https://x.com/RugBusterAI"],
   ["Discord", "https://discord.gg/v7nFJg7VyG"],
-  ["Telegram · founder", "https://t.me/FFeyzer"],
+  ["Telegram · community", "https://t.me/rugbuster_community"],
   ["API for wallets and bots", "https://rugbuster.io/#builders"],
   ["Privacy", "https://rugbuster.io/privacy/"],
 ];
@@ -40,7 +40,7 @@ export function AboutScreen() {
       <Text style={s.body}>Tell us. A scan that looks wrong, an alert that did not arrive, a payment that failed: write, and we fix it.</Text>
       <View style={s.supportRow}>
         <Pressable style={s.supportBtn} onPress={() => reportOnTelegram()}>
-          <Text style={s.supportText}>REPORT ON TELEGRAM</Text>
+          <Text style={s.supportText}>TELEGRAM GROUP</Text>
         </Pressable>
         <Pressable style={[s.supportBtn, { borderColor: C.purple }]} onPress={reportOnDiscord}>
           <Text style={[s.supportText, { color: C.purple }]}>DISCORD</Text>

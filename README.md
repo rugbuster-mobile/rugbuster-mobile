@@ -50,7 +50,7 @@ API used: `https://rugbuster-solana-api-production.up.railway.app` (`/score`, `/
 
 ## Something not working?
 
-Write on Telegram (https://t.me/FFeyzer) or Discord (https://discord.gg/v7nFJg7VyG), or open an issue here. The app has a "Report a problem" button under About and under every error.
+Write in the Telegram group (https://t.me/rugbuster_community) or on Discord (https://discord.gg/v7nFJg7VyG), or open an issue here. The app has a "Report a problem" button under About and under every error.
 
 ## Links
 

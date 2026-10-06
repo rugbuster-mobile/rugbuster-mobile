@@ -4,7 +4,7 @@
 import { Linking, Platform } from "react-native";
 import Constants from "expo-constants";
 
-export const TELEGRAM = "https://t.me/FFeyzer";
+export const TELEGRAM = "https://t.me/rugbuster_community";
 export const DISCORD = "https://discord.gg/v7nFJg7VyG";
 
 function report(context: { mint?: string | null; error?: string | null }) {
@@ -18,7 +18,7 @@ function report(context: { mint?: string | null; error?: string | null }) {
   return lines.join("\n");
 }
 
-// Telegram's share link opens a chat picker with the text prefilled; the user picks Fedja.
+// Telegram's share link opens a chat picker with the text prefilled; the user picks the RugBuster Community group.
 export function reportOnTelegram(context: { mint?: string | null; error?: string | null } = {}) {
   const text = encodeURIComponent(report(context));
   Linking.openURL(`https://t.me/share/url?url=${encodeURIComponent(TELEGRAM)}&text=${text}`).catch(() => Linking.openURL(TELEGRAM).catch(() => {}));
