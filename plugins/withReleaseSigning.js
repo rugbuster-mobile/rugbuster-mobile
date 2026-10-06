@@ -20,6 +20,13 @@ module.exports = function withReleaseSigning(config) {
                 storePassword p.storePassword
                 keyAlias p.keyAlias
                 keyPassword p.keyPassword
+            } else {
+                // No release key on this machine (a fresh clone): sign with the
+                // debug key so the build still produces an installable APK.
+                storeFile file("debug.keystore")
+                storePassword "android"
+                keyAlias "androiddebugkey"
+                keyPassword "android"
             }
         }`
     );
