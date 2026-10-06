@@ -36,7 +36,7 @@ export function AboutScreen() {
       ))}
 
       <Text style={s.kicker2}>HONEST BY DESIGN</Text>
-      <Text style={s.body}>RugBuster does not take money from token creators: no badges, no paid verification. Scans are free; agents and anyone who wants to can pay $0.01 per scan over x402 on Solana. Your scan history stays on this phone.</Text>
+      <Text style={s.body}>RugBuster does not take money from token creators: no badges, no paid verification. Scans are free; agents and anyone who wants to can pay $0.01 per scan over x402 on Solana. Tracking is free for 3 tokens; wallets holding SKR or a Seeker Genesis Token track without limit. Your scan history stays on this phone.</Text>
 
       <Text style={s.kicker2}>WHO BUILDS THIS</Text>
       <Text style={s.body}>Fedja Furduj, Belgrade. 25 years in design and multimedia. Got rugged as a crypto beginner by a token a scanner called safe, so built the check he wanted.</Text>

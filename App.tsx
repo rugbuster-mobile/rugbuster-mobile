@@ -22,6 +22,9 @@ import { ScanScreen } from "./src/screens/ScanScreen";
 import { StudyScreen } from "./src/screens/StudyScreen";
 import { C, F, verdictOf } from "./src/theme";
 import { checkWatchlist, clearAlert, loadWatchlist, toggleWatch, Watched } from "./src/watch";
+import { connectAndRefresh, forgetWallet, FREE_TRACK_LIMIT, loadPerks, NO_PERKS, Perks, refreshPerks } from "./src/perks";
+import { Onboarding } from "./src/components/Onboarding";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 type Tab = "live" | "history" | "scan" | "study" | "about";
 const SIDE_TABS: { key: Tab; label: string; icon: keyof typeof Ionicons.glyphMap }[] = [
@@ -48,11 +51,45 @@ export default function App() {
 
   const [watchlist, setWatchlist] = useState<Watched[]>([]);
   const [checking, setChecking] = useState(false);
+  const [perks, setPerks] = useState<Perks>(NO_PERKS);
+  const [perksBusy, setPerksBusy] = useState(false);
+  const [perksNote, setPerksNote] = useState<string | null>(null);
+  const [onboarding, setOnboarding] = useState(false);
 
   useEffect(() => {
     loadHistory().then(setHistory);
     loadWatchlist().then(setWatchlist);
+    loadPerks().then((p) => {
+      setPerks(p);
+      // a wallet connected earlier: re-read its balances quietly
+      if (p.wallet) refreshPerks(p.wallet).then(setPerks).catch(() => {});
+    });
+    AsyncStorage.getItem("rugbuster.onboarded").then((v) => setOnboarding(!v)).catch(() => {});
   }, []);
+
+  const finishOnboarding = () => {
+    setOnboarding(false);
+    AsyncStorage.setItem("rugbuster.onboarded", "1").catch(() => {});
+  };
+
+  // Connect a wallet through Mobile Wallet Adapter and read what it unlocks.
+  const connect = async () => {
+    setPerksBusy(true);
+    setPerksNote(null);
+    try {
+      const p = await connectAndRefresh();
+      setPerks(p);
+      setPerksNote(p.pro ? `Pro unlocked by ${p.reason}.` : "No SKR or Seeker Genesis Token in this wallet. You can still track 3 tokens for free.");
+    } catch (e: any) {
+      setPerksNote(String(e?.message || e));
+    } finally {
+      setPerksBusy(false);
+    }
+  };
+  const disconnect = async () => {
+    setPerks(await forgetWallet());
+    setPerksNote(null);
+  };
 
   // Re-check the watchlist whenever the app comes to the front. Changes show
   // up in the app; the background task is what sends notifications.
@@ -143,7 +180,14 @@ export default function App() {
     Haptics.selectionAsync().catch(() => {});
     let data = result;
     if (!data?.address || (input.trim() && input.trim() !== data.address)) data = await scan(input);
-    if (data?.address) setWatchlist(await toggleWatch(data));
+    if (!data?.address) return;
+    const tracked = watchlist.some((w) => w.mint === data.address);
+    if (!tracked && !perks.pro && watchlist.length >= FREE_TRACK_LIMIT) {
+      setError(`Free tracking covers ${FREE_TRACK_LIMIT} tokens. Connect a wallet with SKR or a Seeker Genesis Token to track more.`);
+      setTab("history");
+      return;
+    }
+    setWatchlist(await toggleWatch(data));
   };
 
   const openFromWatch = async (mint: string) => {
@@ -216,9 +260,11 @@ export default function App() {
         />
       </View>
       {tab === "live" && <View style={s.page}><LiveScreen onOpen={scan} active={tab === "live"} /></View>}
-      {tab === "history" && <View style={s.page}><HistoryScreen history={history} watchlist={watchlist} checking={checking} onRefresh={recheck} onOpen={openFromWatch} /></View>}
+      {tab === "history" && <View style={s.page}><HistoryScreen history={history} watchlist={watchlist} checking={checking} onRefresh={recheck} onOpen={openFromWatch} perks={perks} perksBusy={perksBusy} perksNote={perksNote} onConnect={connect} onDisconnect={disconnect} /></View>}
       {tab === "study" && <View style={s.page}><StudyScreen onOpen={scan} /></View>}
       {tab === "about" && <View style={s.page}><AboutScreen /></View>}
+
+      <Onboarding visible={onboarding} onDone={finishOnboarding} />
 
       <View style={s.bar}>
         {SIDE_TABS.slice(0, 2).map((t) => <TabButton key={t.key} t={t} active={tab === t.key} dot={t.key === "history" && watchlist.some((w) => !!w.alert)} onPress={() => setTab(t.key)} />)}
