@@ -18,7 +18,7 @@ On pump.fun-style launches, honest and dishonest tokens pass the same contract c
 
 ![A real push alert on 2026-10-07: "The creator of OMEN just sold their 1.5%."](docs/screenshots/omen-real-push-alert.jpg)
 
-*A real alert, not a test: on 2026-10-07 the creator of OMEN sold the last of their tokens at 15:17 (Belgrade) and the phone was notified by the server push. This early build said "sold their 1.5%" (the share left when tracking began); the wording is now "sold the 1.5% they still held".*
+*A real alert, not a test. On 2026-10-07 the creator of OMEN sold the last of their tokens at 15:17 (Belgrade). The first push arrived right after the sale and was opened before anyone took a screenshot; this one, at 15:35, is the second, sent by the 10-minute fallback poll because re-registering the token on app start had re-armed it. That duplicate is fixed (one sale, one alert), and the wording is now "sold the 1.5% they still held".*
 
 *MUNK, scanned on the phone on 2026-10-07. A day earlier this token read GOOD while a large wallet dumped it; the rule was fixed the same day (a token under 24 hours old whose first-seconds buyers cannot be read is not cleared), and the copies row was added after finding 27 tokens under the same ticker in two days.*
 
