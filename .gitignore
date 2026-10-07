@@ -45,3 +45,6 @@ yarn-error.*
 AGENTS.md
 CLAUDE.md
 /android
+
+# Firebase config for push (each fork uses its own project)
+google-services.json

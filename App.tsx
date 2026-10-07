@@ -21,7 +21,7 @@ import { LiveScreen } from "./src/screens/LiveScreen";
 import { ScanScreen } from "./src/screens/ScanScreen";
 import { StudyScreen } from "./src/screens/StudyScreen";
 import { C, F, verdictOf } from "./src/theme";
-import { checkWatchlist, clearAlert, loadWatchlist, toggleWatch, Watched } from "./src/watch";
+import { checkWatchlist, clearAlert, loadWatchlist, syncPush, toggleWatch, Watched } from "./src/watch";
 import { connectAndRefresh, forgetWallet, FREE_TRACK_LIMIT, loadPerks, NO_PERKS, Perks, refreshPerks } from "./src/perks";
 import { Onboarding } from "./src/components/Onboarding";
 import AsyncStorage from "@react-native-async-storage/async-storage";
@@ -103,6 +103,7 @@ export default function App() {
   }, []);
   useEffect(() => {
     recheck();
+    syncPush().then(setWatchlist).catch(() => {});
     const sub = AppState.addEventListener("change", (st) => st === "active" && recheck());
     return () => sub.remove();
   }, [recheck]);
@@ -166,12 +167,15 @@ export default function App() {
     if (text) scan(text);
   }, [hasShareIntent, shareIntent, resetShareIntent, scan]);
 
-  // Tapping a watchlist notification opens that token.
+  // Tapping a watchlist notification opens that token, also when the tap is
+  // what started the app (a push that arrived while it was closed).
   useEffect(() => {
-    const sub = Notifications.addNotificationResponseReceivedListener((r) => {
-      const mint = (r.notification.request.content.data as any)?.mint;
+    const open = (r: Notifications.NotificationResponse | null) => {
+      const mint = (r?.notification.request.content.data as any)?.mint;
       if (mint) scan(String(mint));
-    });
+    };
+    Notifications.getLastNotificationResponseAsync().then(open).catch(() => {});
+    const sub = Notifications.addNotificationResponseReceivedListener(open);
     return () => sub.remove();
   }, [scan]);
 

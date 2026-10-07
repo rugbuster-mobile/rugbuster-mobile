@@ -1,10 +1,11 @@
 // Watchlist: tokens the user holds or follows, re-checked in the background.
 //
-// Every check compares the new answer with the last one we saw and turns a
-// change worth knowing into a notification: the creator sold, or the verdict
-// got worse. Android decides when the background check runs (about every 15
-// minutes at best, less often on battery savers); opening the app checks at once.
-// The list and the snapshots stay on the phone.
+// A creator's sale is pushed by the server the moment it happens (src/push.ts).
+// The phone also re-checks every tracked token: it compares the new answer with
+// the last one and turns a change worth knowing into a notification, a verdict
+// that got worse, or a sale on a phone that cannot receive pushes. Android
+// decides when that background check runs (every 15 minutes at best, hours on a
+// sleeping Samsung); opening the app checks at once. The list stays on the phone.
 
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import * as BackgroundTask from "expo-background-task";
@@ -12,6 +13,7 @@ import * as Notifications from "expo-notifications";
 import * as TaskManager from "expo-task-manager";
 import { Platform } from "react-native";
 import { freeScan } from "./api";
+import { serverWatch } from "./push";
 
 export const WATCH_TASK = "rugbuster-watchlist-check";
 const KEY = "rugbuster.watchlist.v1";
@@ -25,6 +27,7 @@ export type Watched = {
   creator: string | null; // creator_position.status: holding / sold / none
   checkedAt: number;
   alert?: string | null; // the last change found, shown in the app
+  push?: boolean; // the server is watching the creator and will push the sale
 };
 
 export async function loadWatchlist(): Promise<Watched[]> {
@@ -42,8 +45,9 @@ async function save(list: Watched[]) {
   } catch {}
 }
 
-function snapshot(d: any, alert: string | null = null): Watched {
+function snapshot(d: any, alert: string | null = null, push = false): Watched {
   return {
+    push,
     mint: d.address,
     symbol: d.token_symbol || d.token_name || d.address.slice(0, 4),
     label: String(d.label || "UNKNOWN").toUpperCase(),
@@ -60,12 +64,32 @@ export async function isWatched(mint: string) {
 
 export async function toggleWatch(d: any): Promise<Watched[]> {
   const list = await loadWatchlist();
-  const next = list.some((w) => w.mint === d.address)
-    ? list.filter((w) => w.mint !== d.address)
-    : [snapshot(d), ...list].slice(0, 50);
+  const removing = list.some((w) => w.mint === d.address);
+  let next = removing ? list.filter((w) => w.mint !== d.address) : [snapshot(d), ...list].slice(0, 50);
   await save(next);
   if (next.length) await ensureWatching();
+  if (removing) {
+    serverWatch(d.address, false);
+  } else if (await serverWatch(d.address, true)) {
+    next = next.map((w) => (w.mint === d.address ? { ...w, push: true } : w));
+    await save(next);
+  }
   return next;
+}
+
+// Tell the server again about every tracked token whose creator still holds:
+// the phone's push token can change, and a token tracked before push existed
+// was never registered. Cheap: one request per token, on app start.
+export async function syncPush(): Promise<Watched[]> {
+  const list = await loadWatchlist();
+  const next: Watched[] = [];
+  for (const w of list) {
+    next.push(w.creator === "holding" ? { ...w, push: await serverWatch(w.mint, true) } : w);
+  }
+  const latest = await loadWatchlist();
+  const merged = latest.map((l) => next.find((n) => n.mint === l.mint) || l);
+  await save(merged);
+  return merged;
 }
 
 // What changed between two answers, in one sentence, or null.
@@ -91,8 +115,10 @@ export async function checkWatchlist(notify: boolean): Promise<Watched[]> {
     try {
       const d = await freeScan(w.mint);
       const msg = change(w, d);
-      next.push(snapshot(d, msg || w.alert || null));
-      if (msg && notify) {
+      next.push(snapshot(d, msg || w.alert || null, !!w.push));
+      // A creator sale on a server-watched token was already pushed by the server.
+      const pushed = !!w.push && d.creator_position?.status === "sold" && w.creator !== "sold";
+      if (msg && notify && !pushed) {
         await Notifications.scheduleNotificationAsync({
           content: { title: "RugBuster", body: msg, data: { mint: w.mint } },
           trigger: null,
