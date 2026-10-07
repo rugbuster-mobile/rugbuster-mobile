@@ -23,6 +23,29 @@ const ata = (owner: PublicKey, mint: PublicKey) =>
 
 const IDENTITY = { name: "RugBuster", uri: "https://rugbuster.io", icon: "favicon.png" };
 
+// What a RugBuster payment may be, checked in the app before the wallet is
+// asked to sign. The price quote comes from the server; if the server were
+// ever compromised or misconfigured, this is what stops it from asking the
+// wallet to send more, a different token, or to someone else.
+export const PAY_TO = "FYQA1zFc4eUhRe6YNi8a9yQ4oskVgpm35uAFberHkboU";
+export const USDC = "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v";
+export const MAX_AMOUNT = 10000n; // 0.01 USDC (6 decimals)
+
+export function checkQuote(req: any): string | null {
+  if (!String(req?.network || "").startsWith("solana:")) return "The price quote is not for Solana.";
+  if (req.asset !== USDC) return "The price quote asks for a token other than USDC.";
+  if (req.payTo !== PAY_TO) return "The price quote names a recipient that is not RugBuster.";
+  let amount: bigint;
+  try {
+    amount = BigInt(req.amount);
+  } catch {
+    return "The price quote has no valid amount.";
+  }
+  if (amount <= 0n) return "The price quote has no valid amount.";
+  if (amount > MAX_AMOUNT) return "The price quote asks for more than $0.01.";
+  return null;
+}
+
 const encodeJson = (obj: unknown) => Buffer.from(JSON.stringify(obj), "utf8").toString("base64");
 const decodeJson = (str: string) => JSON.parse(Buffer.from(str, "base64").toString("utf8"));
 
@@ -79,6 +102,8 @@ export async function payAndScan(mint: string, onStep: (s: string) => void): Pro
   const challenge = decodeJson(first.headers.get("PAYMENT-REQUIRED") || "");
   const req = (challenge.accepts || []).find((a: any) => String(a.network).startsWith("solana:"));
   if (!req) throw new Error("No Solana payment option offered.");
+  const problem = checkQuote(req);
+  if (problem) throw new Error(`${problem} Nothing was signed or paid.`);
 
   onStep("Waiting for your wallet…");
   let signed: VersionedTransaction;
@@ -86,12 +111,15 @@ export async function payAndScan(mint: string, onStep: (s: string) => void): Pro
     signed = await transact(async (wallet: Web3MobileWallet) => {
       const auth = await wallet.authorize({ chain: "solana:mainnet", identity: IDENTITY });
       const payer = new PublicKey(Buffer.from(auth.accounts[0].address, "base64"));
+      // The facilitator pays the network fee; never let the quote make the user's wallet the fee payer.
+      if (req.extra?.feePayer === payer.toBase58()) throw new Error("FEE_PAYER_IS_USER");
       const tx = buildPayment(req, payer);
       const [out] = await wallet.signTransactions({ transactions: [tx] });
       return out;
     });
   } catch (e: any) {
     const msg = String(e?.message || e);
+    if (/FEE_PAYER_IS_USER/.test(msg)) throw new Error("The price quote would make your wallet pay the network fee. Nothing was signed or paid.");
     if (/no installed wallet|ERROR_WALLET_NOT_FOUND|not found/i.test(msg)) {
       throw new Error("No Solana wallet app found. Install Phantom or Solflare, then try again.");
     }
