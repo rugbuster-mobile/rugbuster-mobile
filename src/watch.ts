@@ -62,17 +62,26 @@ export async function isWatched(mint: string) {
   return (await loadWatchlist()).some((w) => w.mint === mint);
 }
 
-export async function toggleWatch(d: any): Promise<Watched[]> {
+// Returns at once with the new list, so the TRACK button lights immediately.
+// Registering with the server takes a scan on its side (seconds); when it
+// answers, the push flag is saved and `onUpdate` gets the list again.
+export async function toggleWatch(d: any, onUpdate?: (list: Watched[]) => void): Promise<Watched[]> {
   const list = await loadWatchlist();
   const removing = list.some((w) => w.mint === d.address);
-  let next = removing ? list.filter((w) => w.mint !== d.address) : [snapshot(d), ...list].slice(0, 50);
+  const next = removing ? list.filter((w) => w.mint !== d.address) : [snapshot(d), ...list].slice(0, 50);
   await save(next);
-  if (next.length) await ensureWatching();
   if (removing) {
     serverWatch(d.address, false);
-  } else if (await serverWatch(d.address, true)) {
-    next = next.map((w) => (w.mint === d.address ? { ...w, push: true } : w));
-    await save(next);
+  } else {
+    ensureWatching()
+      .then(() => serverWatch(d.address, true))
+      .then(async (pushed) => {
+        if (!pushed) return;
+        const latest = (await loadWatchlist()).map((w) => (w.mint === d.address ? { ...w, push: true } : w));
+        await save(latest);
+        onUpdate?.(latest);
+      })
+      .catch(() => {});
   }
   return next;
 }

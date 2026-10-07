@@ -191,7 +191,7 @@ export default function App() {
       setTab("history");
       return;
     }
-    setWatchlist(await toggleWatch(data));
+    setWatchlist(await toggleWatch(data, setWatchlist));
   };
 
   const openFromWatch = async (mint: string) => {

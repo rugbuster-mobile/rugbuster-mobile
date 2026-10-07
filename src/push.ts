@@ -30,15 +30,20 @@ export async function deviceToken(): Promise<string | null> {
 export async function serverWatch(mint: string, on: boolean): Promise<boolean> {
   const token = await deviceToken();
   if (!token) return false;
+  const abort = new AbortController();
+  const timer = setTimeout(() => abort.abort(), 30000);
   try {
     const res = await fetch(`${API}/${on ? "watch" : "unwatch"}`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ device_token: token, mint }),
+      signal: abort.signal,
     });
     const data = await res.json().catch(() => null);
     return on ? !!data?.watching : false;
   } catch {
     return false;
+  } finally {
+    clearTimeout(timer);
   }
 }
