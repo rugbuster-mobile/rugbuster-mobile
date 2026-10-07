@@ -48,6 +48,12 @@ For development: `npx expo run:android` with a phone connected over USB.
 
 API used: `https://rugbuster-solana-api-production.up.railway.app` (`/score`, `/x402/score`, `/feed`, `/token-image`).
 
+## Dependency audit
+
+- `uuid` below 11.1.1 (GHSA-w5hq-g745-h8pq) came in through `jayson` and `xcode`; `package.json` overrides both to `uuid@^11.1.1`.
+- `stream-json` 1.9.1 is still flagged. Only `jayson`'s server-side stream parser uses it; the app imports `@solana/web3.js`, which loads `jayson/lib/client/browser` and never that parser, so it is not in the app bundle. Its fixed releases (3.x) break that parser, so it is left as is rather than forced.
+- The other `npm audit` entries are in Expo's build-time tooling, not in code that ships in the APK.
+
 ## Something not working?
 
 Write in the Telegram group (https://t.me/rugbuster_community) or on Discord (https://discord.gg/v7nFJg7VyG), or open an issue here. The app has a "Report a problem" button under About and under every error.
