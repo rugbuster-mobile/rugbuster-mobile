@@ -26,6 +26,40 @@ function joinWords(parts: string[]) {
   return parts.length < 2 ? parts.join("") : parts.slice(0, -1).join(", ") + " and " + parts[parts.length - 1];
 }
 
+// Who made the copies (the API's name_copies.makers), in one or two sentences.
+export function makersLine(m: any): { text: string; linked: boolean; proof: Proof | null } {
+  if (!m || !m.status) return { text: "", linked: false, proof: null };
+  if (m.status === "checking" || m.status === "busy") {
+    return { text: "Checking who made these copies, about 30 seconds…", linked: false, proof: null };
+  }
+  if (m.status !== "ok" || !m.creators_read) return { text: "", linked: false, proof: null };
+  const creator = (m.shared_creators || [])[0];
+  if (creator) {
+    const more = (m.shared_creators || []).length - 1;
+    return {
+      text: `${creator.count} of ${m.checked} copies checked were launched by the same wallet (${short(creator.wallet)})` +
+        (creator.includes_most_traded ? ", including the most traded one" : "") + "." +
+        (more > 0 ? ` ${more} more wallet${more > 1 ? "s" : ""} made two or more.` : ""),
+      linked: true,
+      proof: acctLink("maker", creator.wallet),
+    };
+  }
+  const funder = (m.shared_funders || [])[0];
+  if (funder) {
+    return {
+      text: `The creators of ${funder.count} of ${m.checked} copies checked were funded by the same wallet (${short(funder.wallet)}).`,
+      linked: true,
+      proof: acctLink("funder", funder.wallet),
+    };
+  }
+  return {
+    text: `${m.checked} copies checked: ${m.distinct_creators} different creators, no shared maker or funder` +
+      (m.exchange_funded ? ` (${m.exchange_funded} funded from exchanges, which links nothing).` : "."),
+    linked: false,
+    proof: null,
+  };
+}
+
 export function facts(d: any): Fact[] {
   const out: Fact[] = [];
   const label = String(d.label || "").toUpperCase();
@@ -116,13 +150,15 @@ export function facts(d: any): Fact[] {
     const top = nc.most_traded;
     const other = top && !top.is_this_token;
     const count = `${copies}${nc.results_capped ? "+" : ""} other Solana token${copies === 1 && !nc.results_capped ? "" : "s"}`;
+    const makers = makersLine(nc.makers);
     out.push({
-      tone: copies >= 5 || other ? "warn" : "muted",
+      tone: copies >= 5 || other || makers.linked ? "warn" : "muted",
       head: "Copies of this name",
       body: `${count} named ${nc.symbol} launched in the last 24 h.` +
         (other ? ` The most traded one is ${short(top.mint)}; check you have the right address.`
-          : top && top.is_this_token ? " This one trades the most of them." : ""),
-      proof: other ? [{ label: "most traded", href: `https://dexscreener.com/solana/${top.mint}` }] : [],
+          : top && top.is_this_token ? " This one trades the most of them." : "") +
+        (makers.text ? " " + makers.text : ""),
+      proof: clean([other ? { label: "most traded", href: `https://dexscreener.com/solana/${top.mint}` } : null, makers.proof]),
     });
   }
 

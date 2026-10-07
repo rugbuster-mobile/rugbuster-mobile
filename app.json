@@ -2,7 +2,7 @@
   "expo": {
     "name": "RugBuster",
     "slug": "rugbuster-mobile",
-    "version": "1.7.1",
+    "version": "1.7.2",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "dark",
@@ -18,7 +18,7 @@
       },
       "predictiveBackGestureEnabled": false,
       "package": "io.rugbuster.mobile",
-      "versionCode": 12,
+      "versionCode": 13,
       "intentFilters": [
         {
           "action": "VIEW",

@@ -26,4 +26,10 @@ export async function loadFeed(): Promise<FeedItem[]> {
   return data?.items || [];
 }
 
+// Who made the copies of a ticker: `checking` until the server has read them.
+export async function copyMakers(symbol: string): Promise<any> {
+  const res = await netFetch(`${API}/copies?symbol=${encodeURIComponent(symbol)}`);
+  return res.json();
+}
+
 export const tokenImage = (mint: string) => `${API}/token-image?address=${mint}`;

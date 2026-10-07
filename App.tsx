@@ -10,7 +10,7 @@ import { JetBrainsMono_400Regular, JetBrainsMono_700Bold } from "@expo-google-fo
 import { Ionicons } from "@expo/vector-icons";
 import { useShareIntent } from "expo-share-intent";
 import * as Notifications from "expo-notifications";
-import { freeScan, tokenImage } from "./src/api";
+import { copyMakers, freeScan, tokenImage } from "./src/api";
 import { SphereHandle } from "./src/components/Sphere";
 import { Entry, loadHistory, remember } from "./src/history";
 import { resolveMint } from "./src/mint";
@@ -178,6 +178,28 @@ export default function App() {
     const sub = Notifications.addNotificationResponseReceivedListener(open);
     return () => sub.remove();
   }, [scan]);
+
+  // "Who made the copies" is read by the server in the background; ask again
+  // every few seconds while the answer on screen still says it is checking.
+  useEffect(() => {
+    const nc = result?.name_copies;
+    const status = nc?.makers?.status;
+    if (!result?.address || !nc?.symbol || (status !== "checking" && status !== "busy")) return;
+    const address = result.address;
+    let tries = 0;
+    const timer = setInterval(async () => {
+      tries += 1;
+      try {
+        const makers = await copyMakers(nc.symbol);
+        if (makers?.status && makers.status !== "checking" && makers.status !== "busy") {
+          clearInterval(timer);
+          setResult((r: any) => (r && r.address === address ? { ...r, name_copies: { ...r.name_copies, makers } } : r));
+        }
+      } catch {}
+      if (tries >= 20) clearInterval(timer);
+    }, 4000);
+    return () => clearInterval(timer);
+  }, [result?.address, result?.name_copies?.makers?.status]);
 
   // TRACK next to SCAN: track the token on screen, or scan what is typed first.
   const watch = async () => {
