@@ -41,7 +41,24 @@ cd android
 
 The APK is in `android/app/build/outputs/apk/release/app-release.apk`. Push alerts need a `google-services.json` from your own Firebase project in the repository root; without it the app builds and runs the same, and tracked tokens are re-checked on the phone only (`app.config.js` leaves the file out when it is missing). Without RugBuster's release key on your machine, the build signs with the debug key, which installs and runs the same; only the official release is signed with the key published in `https://rugbuster.io/.well-known/assetlinks.json`, which is how wallets verify the app over Mobile Wallet Adapter.
 
-For development: `npx expo run:android` with a phone connected over USB.
+For development: `npx expo run:android` with a phone connected over USB. Type check: `npx tsc --noEmit` (passes). Bundle check without a device: `npx expo export --platform android`. The release APK is built with `-Pandroid.enableMinifyInReleaseBuilds=true -Pandroid.enableShrinkResourcesInReleaseBuilds=true` (about 28 MB, arm64-v8a). The app targets Android 16 (API 36).
+
+## How it was tested
+
+Everything below was run on a physical **Samsung Galaxy** phone with the release APK (not an emulator), with Phantom installed. There is no automated UI test suite in this repo; the server side has one (335 tests, in the API repo at gitlab.com/rugbuster).
+
+| Feature | How to check it | What was observed |
+|---|---|---|
+| Share target | In Phantom open a token, tap Share, pick RugBuster | The app opens and scans that token with no address copied (shown in the demo video, ORCA) |
+| Paste / scan | Paste a mint or a Solscan, pump.fun or DexScreener link | Verdict, reasons and Solscan proof links (demo: Seedthink, TOASTCAT; screenshot: MUNK) |
+| Pay with USDC over Mobile Wallet Adapter | RE-SCAN, PAY $0.01, confirm in Phantom | Phantom opens through MWA, shows -0.01 USDC, the app shows PAID with the transaction link (demo video). Since 1.7.3 the app checks the quote (Solana, USDC, amount of $0.01 or less, RugBuster's receiving wallet, network fee paid by the facilitator) before the wallet is asked to sign |
+| Track + push with the app closed | Open a token whose creator still holds, tap TRACK, close the app | A real alert for OMEN arrived on 2026-10-07 right after the creator's last sale, sent by the server through Firebase Cloud Messaging; the screenshot above shows the second, duplicate push, which is fixed. The demo video shows the in-app test alert, not a real one |
+| Notification tap opens the token | Tap the notification | The app opens on that token (demo video, test alert). The cold-start case is handled in code (`getLastNotificationResponseAsync` in `App.tsx`) |
+| Background re-check | Track a token, leave the phone idle | The phone re-checks in the background as a fallback, which Android runs at its own pace (minutes to hours); the server push is what makes alerts immediate |
+| SKR / Seeker Genesis Token perk | Connect a wallet that holds SKR on the Track tab | PRO - UNLIMITED TRACKING appears for that wallet (demo video); without SKR the app tracks 3 tokens (`FREE_TRACK_LIMIT` in `src/perks.ts`) and then asks to connect a wallet with SKR |
+| Copies of a name | Scan any token with a popular ticker | Copies in the last 24 hours, the most traded one, and which creator made several (screenshot: MUNK) |
+
+Not covered: no emulator run, no Seeker device (the demo phone is a standard Samsung), and no usage statistics yet, because the app reached the Solana dApp Store only on 2026-10-06.
 
 ## How it is put together
 
