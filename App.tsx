@@ -11,6 +11,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { useShareIntent } from "expo-share-intent";
 import * as Notifications from "expo-notifications";
 import { copyMakers, freeScan, tokenImage } from "./src/api";
+import { count } from "./src/usage";
 import { SphereHandle } from "./src/components/Sphere";
 import { Entry, loadHistory, remember } from "./src/history";
 import { resolveMint } from "./src/mint";
@@ -57,6 +58,8 @@ export default function App() {
   const [onboarding, setOnboarding] = useState(false);
 
   useEffect(() => {
+    count("open");
+    const opened = AppState.addEventListener("change", (st) => st === "active" && count("open"));
     loadHistory().then(setHistory);
     loadWatchlist().then(setWatchlist);
     loadPerks().then((p) => {
@@ -65,6 +68,7 @@ export default function App() {
       if (p.wallet) refreshPerks(p.wallet).then(setPerks).catch(() => {});
     });
     AsyncStorage.getItem("rugbuster.onboarded").then((v) => setOnboarding(!v)).catch(() => {});
+    return () => opened.remove();
   }, []);
 
   const finishOnboarding = () => {
@@ -144,6 +148,7 @@ export default function App() {
       if (!mint) throw new Error("No Solana token address in that. Paste the mint, or a Solscan, pump.fun or DexScreener link.");
       setBusy("Reading the chain…");
       const data = await freeScan(mint);
+      count("scan");
       setResult(data);
       setInput(""); // the card shows the token; the box is ready for the next one
       showVerdict(data);

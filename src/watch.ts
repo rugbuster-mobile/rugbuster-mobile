@@ -1,3 +1,4 @@
+import { count } from "./usage";
 // Watchlist: tokens the user holds or follows, re-checked in the background.
 //
 // A creator's sale is pushed by the server the moment it happens (src/push.ts).
@@ -73,6 +74,7 @@ export async function toggleWatch(d: any, onUpdate?: (list: Watched[]) => void):
   if (removing) {
     serverWatch(d.address, false);
   } else {
+    count("track");
     ensureWatching()
       .then(() => serverWatch(d.address, true))
       .then(async (pushed) => {

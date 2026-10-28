@@ -11,6 +11,7 @@ import { Buffer } from "buffer";
 import { PublicKey } from "@solana/web3.js";
 import { API } from "./api";
 import { netFetch } from "./net";
+import { count } from "./usage";
 
 export const FREE_TRACK_LIMIT = 3;
 const KEY = "rugbuster.perks.v1";
@@ -75,7 +76,11 @@ export async function refreshPerks(wallet: string): Promise<Perks> {
 }
 
 export async function connectAndRefresh(): Promise<Perks> {
-  return refreshPerks(await connectWallet());
+  const wallet = await connectWallet();
+  count("connect");
+  const perks = await refreshPerks(wallet);
+  if (perks.pro) count("pro");
+  return perks;
 }
 
 export async function forgetWallet(): Promise<Perks> {

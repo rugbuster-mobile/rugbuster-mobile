@@ -15,6 +15,7 @@ import {
 import { transact, Web3MobileWallet } from "@solana-mobile/mobile-wallet-adapter-protocol-web3js";
 import { API } from "./api";
 import { netFetch } from "./net";
+import { count } from "./usage";
 
 const TOKEN = new PublicKey("TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA");
 const ATA = new PublicKey("ATokenGPvbdGVxr1b2hvZbsiqW5xWH25efTNsLJA8knL");
@@ -150,5 +151,6 @@ export async function payAndScan(mint: string, onStep: (s: string) => void): Pro
   }
   const data = await paid.json();
   const charged = !(paid.status === 503 && data?.x402?.charged === false);
+  if (charged) count("pay");
   return { data, receiptTx: receipt?.transaction || null, charged };
 }
